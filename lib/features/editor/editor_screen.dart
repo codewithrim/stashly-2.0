@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import '../../core/errors.dart';
 import '../../core/validators.dart';
 import '../../data/models/item.dart';
@@ -42,6 +43,9 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
   String? _attachmentMime;
   String? _existingAttachmentPath;
 
+  // Reminder state (Mission D)
+  DateTime? _remindAt;
+
   @override
   void initState() {
     super.initState();
@@ -73,6 +77,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
         _attachmentName = item.attachmentName;
         _attachmentMime = item.attachmentMime;
         _existingAttachmentPath = item.attachmentPath;
+        _remindAt = item.remindAt;
       });
     }
   }
@@ -131,6 +136,84 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     }
   }
 
+  Future<void> _showReminderPicker() async {
+    final now = DateTime.now();
+    final tomorrow9am = DateTime(now.year, now.month, now.day + 1, 9, 0);
+    final nextWeek9am = DateTime(now.year, now.month, now.day + 7, 9, 0);
+
+    await showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text('Resurface Item Later', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              ),
+              ListTile(
+                leading: const Icon(Icons.wb_sunny_outlined, color: Colors.amber),
+                title: const Text('Tomorrow morning (9:00 AM)'),
+                onTap: () {
+                  setState(() => _remindAt = tomorrow9am);
+                  Navigator.pop(ctx);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.date_range_outlined, color: Colors.blue),
+                title: const Text('In 7 days (9:00 AM)'),
+                onTap: () {
+                  setState(() => _remindAt = nextWeek9am);
+                  Navigator.pop(ctx);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.edit_calendar_outlined, color: Colors.purple),
+                title: const Text('Pick custom date & time'),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  final pickedDate = await showDatePicker(
+                    context: context,
+                    initialDate: now.add(const Duration(days: 1)),
+                    firstDate: now,
+                    lastDate: now.add(const Duration(days: 365)),
+                  );
+                  if (pickedDate != null && mounted) {
+                    final pickedTime = await showTimePicker(
+                      context: context,
+                      initialTime: const TimeOfDay(hour: 9, minute: 0),
+                    );
+                    if (pickedTime != null) {
+                      setState(() {
+                        _remindAt = DateTime(
+                          pickedDate.year,
+                          pickedDate.month,
+                          pickedDate.day,
+                          pickedTime.hour,
+                          pickedTime.minute,
+                        );
+                      });
+                    }
+                  }
+                },
+              ),
+              if (_remindAt != null)
+                ListTile(
+                  leading: const Icon(Icons.notifications_off_outlined, color: Colors.red),
+                  title: const Text('Clear reminder', style: TextStyle(color: Colors.red)),
+                  onTap: () {
+                    setState(() => _remindAt = null);
+                    Navigator.pop(ctx);
+                  },
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   void _addTag(String raw) {
     if (raw.trim().isEmpty) return;
     final sanitized = Validators.sanitizeTags([..._tags, raw]);
@@ -175,7 +258,6 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
 
     final sanitizedContent = Validators.sanitizeContent(_contentController.text);
 
-    // Rule: Image type needs an attachment
     if (_selectedType == ItemType.image && _pickedFile == null && _existingAttachmentPath == null) {
       setState(() => _errorMessage = 'An image item requires an attached photo or graphic.');
       return;
@@ -197,7 +279,6 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       var finalAttachmentName = _attachmentName;
       var finalAttachmentMime = _attachmentMime;
 
-      // Upload newly picked attachment if exists
       if (_pickedFile != null && _attachmentName != null && _attachmentMime != null) {
         final attachmentService = ref.read(attachmentServiceProvider);
         final meta = await attachmentService.uploadAttachment(
@@ -218,12 +299,27 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
         content: sanitizedContent,
         url: validatedUrl,
         tags: _tags,
+        remindAt: _remindAt,
         attachmentPath: finalAttachmentPath,
         attachmentName: finalAttachmentName,
         attachmentMime: finalAttachmentMime,
       );
 
       await repo.saveItem(item);
+
+      // Schedule or cancel local notification
+      final reminderService = ref.read(reminderServiceProvider);
+      if (_remindAt != null) {
+        await reminderService.requestPermission();
+        await reminderService.scheduleReminder(
+          itemId: item.id,
+          title: item.title,
+          scheduledDate: _remindAt!,
+        );
+      } else {
+        await reminderService.cancelReminder(item.id);
+      }
+
       if (mounted) {
         context.pop();
       }
@@ -343,6 +439,29 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                 labelText: 'Content / Snippet',
                 hintText: 'Type your thoughts, code, or markdown snippet...',
                 alignLabelWithHint: true,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Reminder Option Card (Mission D)
+            Card(
+              child: ListTile(
+                leading: Icon(
+                  _remindAt != null ? Icons.notifications_active : Icons.notifications_none,
+                  color: _remindAt != null ? Colors.amber.shade700 : null,
+                ),
+                title: Text(
+                  _remindAt != null
+                      ? 'Reminder: ${DateFormat.yMMMd().add_jm().format(_remindAt!)}'
+                      : 'Resurface Later (Reminder)',
+                  style: TextStyle(
+                    fontWeight: _remindAt != null ? FontWeight.bold : FontWeight.normal,
+                    color: _remindAt != null ? Colors.amber.shade900 : null,
+                  ),
+                ),
+                subtitle: Text(_remindAt != null ? 'Tap to modify or clear' : 'Tomorrow 9am, next week, or custom date'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: _showReminderPicker,
               ),
             ),
             const SizedBox(height: 16),

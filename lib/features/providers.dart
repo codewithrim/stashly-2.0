@@ -5,6 +5,7 @@ import '../../data/models/item.dart';
 import '../../data/repositories/item_repository.dart';
 import '../../data/repositories/synced_item_repository.dart';
 import '../../data/services/attachment_service.dart';
+import '../../data/services/reminder_service.dart';
 
 final databaseProvider = Provider<AppDatabase>((ref) {
   final db = AppDatabase();
@@ -19,6 +20,10 @@ final itemRepositoryProvider = Provider<ItemRepository>((ref) {
 
 final attachmentServiceProvider = Provider<AttachmentService>((ref) {
   return AttachmentService(Supabase.instance.client);
+});
+
+final reminderServiceProvider = Provider<ReminderService>((ref) {
+  return ReminderService.instance;
 });
 
 final activeItemsStreamProvider = StreamProvider<List<SavedItem>>((ref) {
