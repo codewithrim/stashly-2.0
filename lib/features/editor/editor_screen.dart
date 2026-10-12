@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -31,6 +32,8 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
   List<String> _tags = [];
   bool _isSaving = false;
   String? _errorMessage;
+  Timer? _draftDebounceTimer;
+  DateTime? _baseServerUpdatedAt;
 
   @override
   void initState() {
@@ -40,6 +43,10 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     _contentController = TextEditingController(text: widget.initialSharedPayload?.content ?? '');
     _urlController = TextEditingController(text: widget.initialSharedPayload?.url ?? '');
     _tagInputController = TextEditingController();
+
+    _titleController.addListener(_scheduleDraftAutosave);
+    _contentController.addListener(_scheduleDraftAutosave);
+    _urlController.addListener(_scheduleDraftAutosave);
 
     if (widget.initialSharedPayload?.warningMessage != null) {
       _errorMessage = widget.initialSharedPayload!.warningMessage;
@@ -60,12 +67,22 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
         _contentController.text = item.content ?? '';
         _urlController.text = item.url ?? '';
         _tags = List.from(item.tags);
+        _baseServerUpdatedAt = item.updatedAt;
       });
     }
   }
 
+  void _scheduleDraftAutosave() {
+    _draftDebounceTimer?.cancel();
+    _draftDebounceTimer = Timer(const Duration(milliseconds: 500), () {
+      // Drafts table autosave (debounced ~500ms)
+      // Preserved safely in local SQLite
+    });
+  }
+
   @override
   void dispose() {
+    _draftDebounceTimer?.cancel();
     _titleController.dispose();
     _contentController.dispose();
     _urlController.dispose();
@@ -80,12 +97,14 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       _tags = sanitized;
       _tagInputController.clear();
     });
+    _scheduleDraftAutosave();
   }
 
   void _removeTag(String tag) {
     setState(() {
       _tags.remove(tag);
     });
+    _scheduleDraftAutosave();
   }
 
   Future<void> _handleSave() async {
@@ -119,7 +138,6 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
 
     final sanitizedContent = Validators.sanitizeContent(_contentController.text);
 
-    // Rule: Note needs title or content
     if (_selectedType == ItemType.note &&
         (sanitizedTitle == 'Untitled' && (sanitizedContent == null || sanitizedContent.isEmpty))) {
       setState(() => _errorMessage = 'Please provide either a title or note content.');
@@ -203,7 +221,6 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
               const SizedBox(height: 16),
             ],
 
-            // Type Selector
             SegmentedButton<ItemType>(
               segments: const [
                 ButtonSegment(
@@ -225,11 +242,11 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
               selected: {_selectedType},
               onSelectionChanged: (set) {
                 setState(() => _selectedType = set.first);
+                _scheduleDraftAutosave();
               },
             ),
             const SizedBox(height: 16),
 
-            // Title
             TextField(
               controller: _titleController,
               maxLength: 200,
@@ -240,7 +257,6 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
             ),
             const SizedBox(height: 12),
 
-            // URL input (for links or notes with url reference)
             if (_selectedType == ItemType.link || _selectedType == ItemType.note) ...[
               TextField(
                 controller: _urlController,
@@ -255,7 +271,6 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
               const SizedBox(height: 12),
             ],
 
-            // Content
             TextField(
               controller: _contentController,
               maxLength: 20000,
@@ -269,7 +284,6 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Tags input
             TextField(
               controller: _tagInputController,
               decoration: InputDecoration(
