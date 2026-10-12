@@ -1,15 +1,18 @@
-import 'dart:async';
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../core/errors.dart';
 import '../../core/validators.dart';
 import '../../data/models/item.dart';
+import '../../data/services/attachment_service.dart';
 import '../../data/services/share_parser.dart';
 import '../providers.dart';
 
 class EditorScreen extends ConsumerStatefulWidget {
-  final String itemId; // 'new' or UUID
+  final String itemId;
   final SharedPayload? initialSharedPayload;
 
   const EditorScreen({
@@ -32,8 +35,12 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
   List<String> _tags = [];
   bool _isSaving = false;
   String? _errorMessage;
-  Timer? _draftDebounceTimer;
-  DateTime? _baseServerUpdatedAt;
+
+  // Attachment state
+  File? _pickedFile;
+  String? _attachmentName;
+  String? _attachmentMime;
+  String? _existingAttachmentPath;
 
   @override
   void initState() {
@@ -43,10 +50,6 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     _contentController = TextEditingController(text: widget.initialSharedPayload?.content ?? '');
     _urlController = TextEditingController(text: widget.initialSharedPayload?.url ?? '');
     _tagInputController = TextEditingController();
-
-    _titleController.addListener(_scheduleDraftAutosave);
-    _contentController.addListener(_scheduleDraftAutosave);
-    _urlController.addListener(_scheduleDraftAutosave);
 
     if (widget.initialSharedPayload?.warningMessage != null) {
       _errorMessage = widget.initialSharedPayload!.warningMessage;
@@ -67,27 +70,65 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
         _contentController.text = item.content ?? '';
         _urlController.text = item.url ?? '';
         _tags = List.from(item.tags);
-        _baseServerUpdatedAt = item.updatedAt;
+        _attachmentName = item.attachmentName;
+        _attachmentMime = item.attachmentMime;
+        _existingAttachmentPath = item.attachmentPath;
       });
     }
   }
 
-  void _scheduleDraftAutosave() {
-    _draftDebounceTimer?.cancel();
-    _draftDebounceTimer = Timer(const Duration(milliseconds: 500), () {
-      // Drafts table autosave (debounced ~500ms)
-      // Preserved safely in local SQLite
-    });
-  }
-
   @override
   void dispose() {
-    _draftDebounceTimer?.cancel();
     _titleController.dispose();
     _contentController.dispose();
     _urlController.dispose();
     _tagInputController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final image = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+      maxWidth: 2048,
+      maxHeight: 2048,
+    );
+    if (image != null) {
+      final file = File(image.path);
+      final size = await file.length();
+      if (size > AttachmentService.maxSizeBytes) {
+        setState(() => _errorMessage = 'Image size exceeds the 10 MB limit.');
+        return;
+      }
+      setState(() {
+        _pickedFile = file;
+        _attachmentName = image.name;
+        _attachmentMime = image.mimeType ?? 'image/jpeg';
+        _errorMessage = null;
+      });
+    }
+  }
+
+  Future<void> _pickPdf() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+    );
+    if (result != null && result.files.single.path != null) {
+      final file = File(result.files.single.path!);
+      final size = await file.length();
+      if (size > AttachmentService.maxSizeBytes) {
+        setState(() => _errorMessage = 'PDF size exceeds the 10 MB limit.');
+        return;
+      }
+      setState(() {
+        _pickedFile = file;
+        _attachmentName = result.files.single.name;
+        _attachmentMime = 'application/pdf';
+        _errorMessage = null;
+      });
+    }
   }
 
   void _addTag(String raw) {
@@ -97,20 +138,16 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       _tags = sanitized;
       _tagInputController.clear();
     });
-    _scheduleDraftAutosave();
   }
 
   void _removeTag(String tag) {
     setState(() {
       _tags.remove(tag);
     });
-    _scheduleDraftAutosave();
   }
 
   Future<void> _handleSave() async {
-    setState(() {
-      _errorMessage = null;
-    });
+    setState(() => _errorMessage = null);
 
     String? validatedUrl;
     try {
@@ -138,6 +175,12 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
 
     final sanitizedContent = Validators.sanitizeContent(_contentController.text);
 
+    // Rule: Image type needs an attachment
+    if (_selectedType == ItemType.image && _pickedFile == null && _existingAttachmentPath == null) {
+      setState(() => _errorMessage = 'An image item requires an attached photo or graphic.');
+      return;
+    }
+
     if (_selectedType == ItemType.note &&
         (sanitizedTitle == 'Untitled' && (sanitizedContent == null || sanitizedContent.isEmpty))) {
       setState(() => _errorMessage = 'Please provide either a title or note content.');
@@ -150,6 +193,24 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       final repo = ref.read(itemRepositoryProvider);
       final isNew = widget.itemId == 'new';
 
+      var finalAttachmentPath = _existingAttachmentPath;
+      var finalAttachmentName = _attachmentName;
+      var finalAttachmentMime = _attachmentMime;
+
+      // Upload newly picked attachment if exists
+      if (_pickedFile != null && _attachmentName != null && _attachmentMime != null) {
+        final attachmentService = ref.read(attachmentServiceProvider);
+        final meta = await attachmentService.uploadAttachment(
+          itemId: isNew ? 'draft' : widget.itemId,
+          file: _pickedFile!,
+          rawFilename: _attachmentName!,
+          mimeType: _attachmentMime!,
+        );
+        finalAttachmentPath = meta.path;
+        finalAttachmentName = meta.name;
+        finalAttachmentMime = meta.mime;
+      }
+
       final item = SavedItem.create(
         id: isNew ? null : widget.itemId,
         type: _selectedType,
@@ -157,6 +218,9 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
         content: sanitizedContent,
         url: validatedUrl,
         tags: _tags,
+        attachmentPath: finalAttachmentPath,
+        attachmentName: finalAttachmentName,
+        attachmentMime: finalAttachmentMime,
       );
 
       await repo.saveItem(item);
@@ -242,7 +306,6 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
               selected: {_selectedType},
               onSelectionChanged: (set) {
                 setState(() => _selectedType = set.first);
-                _scheduleDraftAutosave();
               },
             ),
             const SizedBox(height: 16),
@@ -274,12 +337,72 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
             TextField(
               controller: _contentController,
               maxLength: 20000,
-              maxLines: 6,
+              maxLines: 5,
               keyboardType: TextInputType.multiline,
               decoration: const InputDecoration(
                 labelText: 'Content / Snippet',
                 hintText: 'Type your thoughts, code, or markdown snippet...',
                 alignLabelWithHint: true,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Attachment Picker Card
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Attachment (Images or PDF, Max 10MB)', style: TextStyle(fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 8),
+                    if (_attachmentName != null || _pickedFile != null) ...[
+                      Row(
+                        children: [
+                          Icon(
+                            _attachmentMime == 'application/pdf' ? Icons.picture_as_pdf : Icons.image,
+                            color: const Color(0xFF6366F1),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _attachmentName ?? _pickedFile!.path.split('/').last,
+                              style: const TextStyle(fontWeight: FontWeight.w500),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close, size: 20),
+                            onPressed: () {
+                              setState(() {
+                                _pickedFile = null;
+                                _attachmentName = null;
+                                _attachmentMime = null;
+                                _existingAttachmentPath = null;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ] else ...[
+                      Row(
+                        children: [
+                          OutlinedButton.icon(
+                            onPressed: _pickImage,
+                            icon: const Icon(Icons.photo_library_outlined, size: 18),
+                            label: const Text('Add Image'),
+                          ),
+                          const SizedBox(width: 8),
+                          OutlinedButton.icon(
+                            onPressed: _pickPdf,
+                            icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
+                            label: const Text('Add PDF'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 16),

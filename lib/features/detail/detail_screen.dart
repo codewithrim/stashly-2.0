@@ -73,6 +73,9 @@ class DetailScreen extends ConsumerWidget {
                         ),
                       );
                       if (confirmed == true) {
+                        if (item.attachmentPath != null) {
+                          await ref.read(attachmentServiceProvider).deleteAttachment(item.attachmentPath!);
+                        }
                         await repo.deleteItem(item.id);
                         if (context.mounted) context.pop();
                       }
@@ -112,14 +115,12 @@ class DetailScreen extends ConsumerWidget {
           return ListView(
             padding: const EdgeInsets.all(20),
             children: [
-              // Title
               Text(
                 item.title.isEmpty ? 'Untitled' : item.title,
                 style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
 
-              // Tags
               if (item.tags.isNotEmpty) ...[
                 Wrap(
                   spacing: 6,
@@ -138,7 +139,56 @@ class DetailScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
               ],
 
-              // URL Card
+              // Attachment Preview Card
+              if (item.attachmentPath != null) ...[
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      children: [
+                        Icon(
+                          item.attachmentMime == 'application/pdf'
+                              ? Icons.picture_as_pdf
+                              : Icons.image,
+                          color: const Color(0xFF6366F1),
+                          size: 32,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.attachmentName ?? 'Attachment',
+                                style: const TextStyle(fontWeight: FontWeight.w600),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                item.attachmentMime ?? '',
+                                style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withOpacity(0.6)),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.open_in_new),
+                          tooltip: 'Open Attachment via Signed URL',
+                          onPressed: () async {
+                            final signedUrl = await ref
+                                .read(attachmentServiceProvider)
+                                .getSignedUrl(item.attachmentPath!);
+                            if (context.mounted) {
+                              _openUrl(context, signedUrl);
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+
               if (item.url != null && item.url!.isNotEmpty) ...[
                 Card(
                   color: theme.colorScheme.primary.withOpacity(0.08),
@@ -175,7 +225,6 @@ class DetailScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
               ],
 
-              // Content Body
               if (item.content != null && item.content!.isNotEmpty) ...[
                 Card(
                   child: Padding(
@@ -189,7 +238,6 @@ class DetailScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
               ],
 
-              // Metadata Footer
               const Divider(),
               const SizedBox(height: 8),
               Row(
