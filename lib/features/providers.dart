@@ -6,6 +6,7 @@ import '../../data/repositories/item_repository.dart';
 import '../../data/repositories/synced_item_repository.dart';
 import '../../data/services/attachment_service.dart';
 import '../../data/services/reminder_service.dart';
+import '../../data/services/share_link_service.dart';
 
 final databaseProvider = Provider<AppDatabase>((ref) {
   final db = AppDatabase();
@@ -26,6 +27,10 @@ final reminderServiceProvider = Provider<ReminderService>((ref) {
   return ReminderService.instance;
 });
 
+final shareLinkServiceProvider = Provider<ShareLinkService>((ref) {
+  return ShareLinkService(Supabase.instance.client);
+});
+
 final activeItemsStreamProvider = StreamProvider<List<SavedItem>>((ref) {
   final repo = ref.watch(itemRepositoryProvider);
   return repo.watchActiveItems();
@@ -39,4 +44,9 @@ final archivedItemsStreamProvider = StreamProvider<List<SavedItem>>((ref) {
 final itemDetailProvider = FutureProvider.family<SavedItem?, String>((ref, id) {
   final repo = ref.watch(itemRepositoryProvider);
   return repo.getItemById(id);
+});
+
+final itemShareLinkProvider = FutureProvider.family<ShareLinkInfo?, String>((ref, id) {
+  final service = ref.watch(shareLinkServiceProvider);
+  return service.getActiveLinkForItem(id);
 });

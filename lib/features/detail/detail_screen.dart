@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../data/models/item.dart';
 import '../providers.dart';
@@ -28,6 +29,7 @@ class DetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final itemAsync = ref.watch(itemDetailProvider(itemId));
+    final shareLinkAsync = ref.watch(itemShareLinkProvider(itemId));
     final repo = ref.read(itemRepositoryProvider);
     final theme = Theme.of(context);
 
@@ -138,6 +140,117 @@ class DetailScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
               ],
+
+              // Mission B: Public Sharing Link Card
+              shareLinkAsync.when(
+                loading: () => const LinearProgressIndicator(),
+                error: (_, __) => const SizedBox.shrink(),
+                data: (shareLink) {
+                  final hasActiveLink = shareLink != null && shareLink.isActive;
+                  final publicUrl = hasActiveLink
+                      ? 'https://codewithrim.github.io/stashly-2.0/?t=${shareLink.token}'
+                      : null;
+
+                  return Card(
+                    color: hasActiveLink ? const Color(0xFF6366F1).withOpacity(0.08) : null,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                hasActiveLink ? Icons.public : Icons.public_off,
+                                color: hasActiveLink ? const Color(0xFF6366F1) : Colors.grey,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                hasActiveLink ? 'Public Read-Only Link (Active)' : 'Public Link Sharing',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            hasActiveLink
+                                ? 'Anyone with this link can view this note/link. Attachments are not shared.'
+                                : 'Generate an unguessable read-only link to share this item publicly.',
+                            style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurface.withOpacity(0.7)),
+                          ),
+                          const SizedBox(height: 12),
+                          if (hasActiveLink) ...[
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.surface,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: theme.colorScheme.outlineVariant),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      publicUrl!,
+                                      style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.copy, size: 18),
+                                    tooltip: 'Copy Link',
+                                    onPressed: () {
+                                      Clipboard.setData(ClipboardData(text: publicUrl));
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Public link copied!')),
+                                      );
+                                    },
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.share, size: 18),
+                                    tooltip: 'Share',
+                                    onPressed: () {
+                                      Share.share(publicUrl, subject: item.title);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            OutlinedButton.icon(
+                              onPressed: () async {
+                                await ref
+                                    .read(shareLinkServiceProvider)
+                                    .revokeShareLink(shareLink.token);
+                                ref.invalidate(itemShareLinkProvider(itemId));
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Public link revoked successfully.')),
+                                  );
+                                }
+                              },
+                              icon: const Icon(Icons.link_off, color: Colors.red),
+                              label: const Text('Revoke Link', style: TextStyle(color: Colors.red)),
+                            ),
+                          ] else ...[
+                            FilledButton.icon(
+                              onPressed: () async {
+                                await ref
+                                    .read(shareLinkServiceProvider)
+                                    .createShareLink(item.id);
+                                ref.invalidate(itemShareLinkProvider(itemId));
+                              },
+                              icon: const Icon(Icons.add_link),
+                              label: const Text('Create Public Link'),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
 
               // Attachment Preview Card
               if (item.attachmentPath != null) ...[
