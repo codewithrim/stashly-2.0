@@ -1,8 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/local/db.dart';
 import '../../data/models/item.dart';
 import '../../data/repositories/item_repository.dart';
-import '../../data/repositories/local_item_repository.dart';
+import '../../data/repositories/synced_item_repository.dart';
 
 final databaseProvider = Provider<AppDatabase>((ref) {
   final db = AppDatabase();
@@ -12,7 +13,7 @@ final databaseProvider = Provider<AppDatabase>((ref) {
 
 final itemRepositoryProvider = Provider<ItemRepository>((ref) {
   final db = ref.watch(databaseProvider);
-  return LocalItemRepository(db);
+  return SyncedItemRepository(db, Supabase.instance.client);
 });
 
 final activeItemsStreamProvider = StreamProvider<List<SavedItem>>((ref) {

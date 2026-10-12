@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../features/auth/auth_screen.dart';
 import '../features/detail/detail_screen.dart';
 import '../features/editor/editor_screen.dart';
 import '../features/inbox/inbox_screen.dart';
@@ -7,7 +9,23 @@ import '../features/settings/settings_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
+  redirect: (context, state) {
+    final session = Supabase.instance.client.auth.currentSession;
+    final isLoggingIn = state.matchedLocation == '/auth';
+
+    if (session == null && !isLoggingIn) {
+      return '/auth';
+    }
+    if (session != null && isLoggingIn) {
+      return '/';
+    }
+    return null;
+  },
   routes: [
+    GoRoute(
+      path: '/auth',
+      builder: (context, state) => const AuthScreen(),
+    ),
     GoRoute(
       path: '/',
       builder: (context, state) => const InboxScreen(),
