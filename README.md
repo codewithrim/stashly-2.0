@@ -5,7 +5,7 @@
 Stashly 2.0 is a private, cross-device save-for-later app for notes, links, snippets and images. It works offline, syncs to the cloud, and keeps every user's data isolated at the database level.
 
 **Stack:** Flutter (Dart) · Supabase (Auth, Postgres + RLS, Private Storage, Edge Functions) · Drift (SQLite) · Riverpod  
-**Download:** [Latest APK](https://github.com/codewithrim/stashly-2.0/releases/latest) · **Project spec:** [stashly.md](file:///d:/dev/Projects/stashly%202.0/stashly.md)
+**Download:** [Latest APK](https://github.com/codewithrim/stashly-2.0/releases/latest)
 
 ---
 
