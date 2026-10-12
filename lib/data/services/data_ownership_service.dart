@@ -19,12 +19,13 @@ class DataOwnershipService {
     final user = _supabase.auth.currentUser;
     final activeItems = await _db.getAllActiveItems();
     final archivedItems = await (_db.select(_db.items)
-          ..where((tbl) => tbl.isDeletedLocally.equals(false) & tbl.archived.equals(true)))
+          ..where((tbl) => tbl.isDeletedLocally.equals(false))
+          ..where((tbl) => tbl.archived.equals(true)))
         .get();
 
     final allItems = [
       ...activeItems,
-      ...archivedItems.map((r) => _db._rowToModel(r)),
+      ...archivedItems.map((r) => _db.rowToModel(r)),
     ];
 
     final exportData = {

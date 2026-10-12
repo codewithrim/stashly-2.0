@@ -61,27 +61,27 @@ class AppDatabase extends _$AppDatabase {
       ..where((tbl) => tbl.isDeletedLocally.equals(false) & tbl.archived.equals(false))
       ..orderBy([(tbl) => OrderingTerm.desc(tbl.updatedAt)]);
     final rows = await query.get();
-    return rows.map(_rowToModel).toList();
+    return rows.map(rowToModel).toList();
   }
 
   Stream<List<SavedItem>> watchActiveItems() {
     final query = select(items)
       ..where((tbl) => tbl.isDeletedLocally.equals(false) & tbl.archived.equals(false))
       ..orderBy([(tbl) => OrderingTerm.desc(tbl.updatedAt)]);
-    return query.watch().map((rows) => rows.map(_rowToModel).toList());
+    return query.watch().map((rows) => rows.map(rowToModel).toList());
   }
 
   Stream<List<SavedItem>> watchArchivedItems() {
     final query = select(items)
       ..where((tbl) => tbl.isDeletedLocally.equals(false) & tbl.archived.equals(true))
       ..orderBy([(tbl) => OrderingTerm.desc(tbl.updatedAt)]);
-    return query.watch().map((rows) => rows.map(_rowToModel).toList());
+    return query.watch().map((rows) => rows.map(rowToModel).toList());
   }
 
   Future<SavedItem?> getItemById(String id) async {
     final query = select(items)..where((tbl) => tbl.id.equals(id) & tbl.isDeletedLocally.equals(false));
     final row = await query.getSingleOrNull();
-    return row == null ? null : _rowToModel(row);
+    return row == null ? null : rowToModel(row);
   }
 
   Future<void> upsertItem(SavedItem item) async {
@@ -125,7 +125,7 @@ class AppDatabase extends _$AppDatabase {
     await delete(drafts).go();
   }
 
-  SavedItem _rowToModel(Item row) {
+  SavedItem rowToModel(Item row) {
     List<String> tagsList = [];
     try {
       final decoded = jsonDecode(row.tags);

@@ -56,11 +56,12 @@ class OutboxWorker {
 
       // 2. Process items marked as dirty (new or edited)
       final dirtyItems = await (_db.select(_db.items)
-            ..where((t) => t.isDirty.equals(true) & t.isDeletedLocally.equals(false)))
+            ..where((t) => t.isDirty.equals(true))
+            ..where((t) => t.isDeletedLocally.equals(false)))
           .get();
 
       for (final row in dirtyItems) {
-        final item = _db._rowToModel(row).copyWith(ownerId: user.id);
+        final item = _db.rowToModel(row).copyWith(ownerId: user.id);
         try {
           await _supabase.from('saved_items').upsert(item.toJson());
           // Mark locally as synced

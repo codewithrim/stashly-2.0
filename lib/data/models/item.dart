@@ -94,7 +94,7 @@ class SavedItem {
     String? title,
     String? content,
     String? url,
-    List<String> tags,
+    List<String>? tags,
     bool? archived,
     DateTime? remindAt,
     String? attachmentPath,

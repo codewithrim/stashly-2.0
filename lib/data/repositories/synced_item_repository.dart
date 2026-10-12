@@ -120,10 +120,16 @@ class SyncedItemRepository implements ItemRepository {
     bool archived = false,
   }) async {
     final items = archived
-        ? await (_db.select(_db.items)..where((t) => t.isDeletedLocally.equals(false) & t.archived.equals(true))).get()
-        : await (_db.select(_db.items)..where((t) => t.isDeletedLocally.equals(false) & t.archived.equals(false))).get();
+        ? await (_db.select(_db.items)
+              ..where((t) => t.isDeletedLocally.equals(false))
+              ..where((t) => t.archived.equals(true)))
+            .get()
+        : await (_db.select(_db.items)
+              ..where((t) => t.isDeletedLocally.equals(false))
+              ..where((t) => t.archived.equals(false)))
+            .get();
 
-    final all = items.map((r) => _db._rowToModel(r)).toList();
+    final all = items.map((r) => _db.rowToModel(r)).toList();
 
     return all.where((item) {
       if (typeFilter != null && item.type != typeFilter) return false;
