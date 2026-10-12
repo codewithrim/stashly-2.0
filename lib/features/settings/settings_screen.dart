@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../auth/auth_controller.dart';
+import '../auth/biometric_provider.dart';
 import '../providers.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -55,6 +56,19 @@ class SettingsScreen extends ConsumerWidget {
                   context.go('/auth');
                 }
               }
+            },
+          ),
+          const Divider(),
+          const ListTile(
+            title: Text('Security & Privacy', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF6366F1))),
+          ),
+          SwitchListTile(
+            secondary: const Icon(Icons.fingerprint, color: Color(0xFF6366F1)),
+            title: const Text('Biometric App Lock'),
+            subtitle: const Text('Require fingerprint or face ID when opening Stashly'),
+            value: ref.watch(biometricLockProvider).isBiometricEnabled,
+            onChanged: (val) {
+              ref.read(biometricLockProvider.notifier).setBiometricEnabled(val);
             },
           ),
           const Divider(),

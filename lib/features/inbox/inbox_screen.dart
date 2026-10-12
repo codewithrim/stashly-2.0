@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/models/item.dart';
+import '../auth/biometric_provider.dart';
 import '../providers.dart';
 import 'filter_provider.dart';
 
@@ -10,6 +11,13 @@ class InboxScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final bioState = ref.watch(biometricLockProvider);
+    if (bioState.isBiometricEnabled && !bioState.isUnlocked) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        context.go('/biometric-lock');
+      });
+    }
+
     final filterState = ref.watch(filterProvider);
     final itemsAsync = ref.watch(filteredItemsProvider);
     final theme = Theme.of(context);

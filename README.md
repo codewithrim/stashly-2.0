@@ -20,6 +20,7 @@ Stashly is a private, cross-device save-for-later application for notes, links, 
 | **Mission C: Attachment Vault** | Completed | Private bucket storage (`<uid>/<item_id>/<file>`), 10MB limit & MIME validation, 60-min signed URLs, cleanup on item delete |
 | **Mission D: Resurface Later** | Completed | Inexact local notifications (`flutter_local_notifications` + `timezone`), quick pickers (Tomorrow 9am, 7 days 9am, custom), tap payload routing to item |
 | **Mission E: Data Ownership** | Completed | Full JSON export via `share_plus`, typed "DELETE" account deletion calling Deno Edge Function (`delete-account`) to wipe auth, files, rows, and local cache |
+| **Biometric App Lock** | Completed | Fingerprint / Face ID lock screen (`local_auth` + `USE_BIOMETRIC`), lock screen guard, and settings toggle |
 
 ---
 

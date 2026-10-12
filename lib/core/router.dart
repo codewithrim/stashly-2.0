@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../data/services/share_parser.dart';
 import '../features/auth/auth_screen.dart';
+import '../features/auth/biometric_lock_screen.dart';
 import '../features/detail/detail_screen.dart';
 import '../features/editor/editor_screen.dart';
 import '../features/inbox/inbox_screen.dart';
@@ -26,6 +27,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/auth',
       builder: (context, state) => const AuthScreen(),
+    ),
+    GoRoute(
+      path: '/biometric-lock',
+      builder: (context, state) => const BiometricLockScreen(),
     ),
     GoRoute(
       path: '/',
