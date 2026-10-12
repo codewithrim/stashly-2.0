@@ -1,0 +1,16 @@
+# Supabase local environment
+.env
+
+# Flutter / Dart build artifacts
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
