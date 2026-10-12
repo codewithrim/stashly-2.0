@@ -5,6 +5,7 @@ import '../../data/models/item.dart';
 import '../../data/repositories/item_repository.dart';
 import '../../data/repositories/synced_item_repository.dart';
 import '../../data/services/attachment_service.dart';
+import '../../data/services/data_ownership_service.dart';
 import '../../data/services/reminder_service.dart';
 import '../../data/services/share_link_service.dart';
 
@@ -29,6 +30,12 @@ final reminderServiceProvider = Provider<ReminderService>((ref) {
 
 final shareLinkServiceProvider = Provider<ShareLinkService>((ref) {
   return ShareLinkService(Supabase.instance.client);
+});
+
+final dataOwnershipServiceProvider = Provider<DataOwnershipService>((ref) {
+  final db = ref.watch(databaseProvider);
+  final repo = ref.watch(itemRepositoryProvider);
+  return DataOwnershipService(db, Supabase.instance.client, repo);
 });
 
 final activeItemsStreamProvider = StreamProvider<List<SavedItem>>((ref) {
