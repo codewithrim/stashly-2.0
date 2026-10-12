@@ -4,12 +4,18 @@ import 'package:go_router/go_router.dart';
 import '../../core/errors.dart';
 import '../../core/validators.dart';
 import '../../data/models/item.dart';
+import '../../data/services/share_parser.dart';
 import '../providers.dart';
 
 class EditorScreen extends ConsumerStatefulWidget {
   final String itemId; // 'new' or UUID
+  final SharedPayload? initialSharedPayload;
 
-  const EditorScreen({super.key, required this.itemId});
+  const EditorScreen({
+    super.key,
+    required this.itemId,
+    this.initialSharedPayload,
+  });
 
   @override
   ConsumerState<EditorScreen> createState() => _EditorScreenState();
@@ -29,13 +35,17 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedType = ItemType.note;
-    _titleController = TextEditingController();
-    _contentController = TextEditingController();
-    _urlController = TextEditingController();
+    _selectedType = widget.initialSharedPayload?.type ?? ItemType.note;
+    _titleController = TextEditingController(text: widget.initialSharedPayload?.title ?? '');
+    _contentController = TextEditingController(text: widget.initialSharedPayload?.content ?? '');
+    _urlController = TextEditingController(text: widget.initialSharedPayload?.url ?? '');
     _tagInputController = TextEditingController();
 
-    if (widget.itemId != 'new') {
+    if (widget.initialSharedPayload?.warningMessage != null) {
+      _errorMessage = widget.initialSharedPayload!.warningMessage;
+    }
+
+    if (widget.itemId != 'new' && widget.initialSharedPayload == null) {
       _loadExistingItem();
     }
   }
@@ -176,16 +186,16 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.red.shade50,
+                  color: Colors.amber.shade50,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.red.shade200),
+                  border: Border.all(color: Colors.amber.shade300),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.error_outline, color: Colors.red),
+                    const Icon(Icons.info_outline, color: Colors.amber),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
+                      child: Text(_errorMessage!, style: TextStyle(color: Colors.amber.shade900, fontSize: 13)),
                     ),
                   ],
                 ),

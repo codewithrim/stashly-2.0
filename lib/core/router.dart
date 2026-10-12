@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../data/services/share_parser.dart';
 import '../features/auth/auth_screen.dart';
 import '../features/detail/detail_screen.dart';
 import '../features/editor/editor_screen.dart';
@@ -41,7 +42,8 @@ final appRouter = GoRouter(
       path: '/editor/:id',
       builder: (context, state) {
         final id = state.pathParameters['id']!;
-        return EditorScreen(itemId: id);
+        final payload = state.extra as SharedPayload?;
+        return EditorScreen(itemId: id, initialSharedPayload: payload);
       },
     ),
     GoRoute(
