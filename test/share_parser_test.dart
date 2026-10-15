@@ -5,7 +5,8 @@ import 'package:stashly/data/services/share_parser.dart';
 void main() {
   group('Share Parser Test Suite', () {
     test('parses plain text note', () {
-      final payload = SharedPayload.parseText('My Grocery List\n- Milk\n- Eggs');
+      final payload =
+          SharedPayload.parseText('My Grocery List\n- Milk\n- Eggs');
       expect(payload, isNotNull);
       expect(payload!.type, ItemType.note);
       expect(payload.title, 'My Grocery List');
@@ -14,7 +15,8 @@ void main() {
     });
 
     test('parses Chrome style Title\\nURL as link', () {
-      final payload = SharedPayload.parseText('Flutter Documentation\nhttps://flutter.dev/docs');
+      final payload = SharedPayload.parseText(
+          'Flutter Documentation\nhttps://flutter.dev/docs');
       expect(payload, isNotNull);
       expect(payload!.type, ItemType.link);
       expect(payload.title, 'Flutter Documentation');

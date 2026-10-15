@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../data/models/item.dart';
+import '../../core/theme.dart';
 import '../providers.dart';
 
 class DetailScreen extends ConsumerWidget {
@@ -32,6 +32,7 @@ class DetailScreen extends ConsumerWidget {
     final shareLinkAsync = ref.watch(itemShareLinkProvider(itemId));
     final repo = ref.read(itemRepositoryProvider);
     final theme = Theme.of(context);
+    final colors = context.stashlyColors;
 
     return Scaffold(
       appBar: AppBar(
@@ -43,7 +44,9 @@ class DetailScreen extends ConsumerWidget {
               return Row(
                 children: [
                   IconButton(
-                    icon: Icon(item.archived ? Icons.unarchive : Icons.archive_outlined),
+                    icon: Icon(item.archived
+                        ? Icons.unarchive
+                        : Icons.archive_outlined),
                     tooltip: item.archived ? 'Restore' : 'Archive',
                     onPressed: () async {
                       await repo.archiveItem(item.id, !item.archived);
@@ -56,18 +59,23 @@ class DetailScreen extends ConsumerWidget {
                     onPressed: () => context.push('/editor/${item.id}'),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                    icon: const Icon(Icons.delete_outline,
+                        color: Colors.redAccent),
                     tooltip: 'Delete',
                     onPressed: () async {
                       final confirmed = await showDialog<bool>(
                         context: context,
                         builder: (ctx) => AlertDialog(
                           title: const Text('Delete Item?'),
-                          content: const Text('Are you sure you want to delete this item?'),
+                          content: const Text(
+                              'Are you sure you want to delete this item?'),
                           actions: [
-                            TextButton(onPressed: () => ctx.pop(false), child: const Text('Cancel')),
+                            TextButton(
+                                onPressed: () => ctx.pop(false),
+                                child: const Text('Cancel')),
                             FilledButton(
-                              style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                              style: FilledButton.styleFrom(
+                                  backgroundColor: Colors.red),
                               onPressed: () => ctx.pop(true),
                               child: const Text('Delete'),
                             ),
@@ -76,7 +84,9 @@ class DetailScreen extends ConsumerWidget {
                       );
                       if (confirmed == true) {
                         if (item.attachmentPath != null) {
-                          await ref.read(attachmentServiceProvider).deleteAttachment(item.attachmentPath!);
+                          await ref
+                              .read(attachmentServiceProvider)
+                              .deleteAttachment(item.attachmentPath!);
                         }
                         await repo.deleteItem(item.id);
                         if (context.mounted) context.pop();
@@ -101,9 +111,12 @@ class DetailScreen extends ConsumerWidget {
                 children: [
                   const Icon(Icons.search_off, size: 64, color: Colors.grey),
                   const SizedBox(height: 16),
-                  const Text('Item not found', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const Text('Item not found',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
-                  const Text('This item may have been deleted or is unavailable.'),
+                  const Text(
+                      'This item may have been deleted or is unavailable.'),
                   const SizedBox(height: 16),
                   FilledButton(
                     onPressed: () => context.go('/'),
@@ -119,7 +132,8 @@ class DetailScreen extends ConsumerWidget {
             children: [
               Text(
                 item.title.isEmpty ? 'Untitled' : item.title,
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
 
@@ -129,7 +143,8 @@ class DetailScreen extends ConsumerWidget {
                   runSpacing: 4,
                   children: item.tags.map((t) {
                     return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color: theme.colorScheme.surfaceVariant,
                         borderRadius: BorderRadius.circular(6),
@@ -152,7 +167,9 @@ class DetailScreen extends ConsumerWidget {
                       : null;
 
                   return Card(
-                    color: hasActiveLink ? const Color(0xFF6366F1).withOpacity(0.08) : null,
+                    color: hasActiveLink
+                        ? colors.accentInteractive.withValues(alpha: 0.12)
+                        : null,
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
@@ -162,12 +179,17 @@ class DetailScreen extends ConsumerWidget {
                             children: [
                               Icon(
                                 hasActiveLink ? Icons.public : Icons.public_off,
-                                color: hasActiveLink ? const Color(0xFF6366F1) : Colors.grey,
+                                color: hasActiveLink
+                                    ? colors.accentInteractive
+                                    : colors.textTertiary,
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                hasActiveLink ? 'Public Read-Only Link (Active)' : 'Public Link Sharing',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                hasActiveLink
+                                    ? 'Public Read-Only Link (Active)'
+                                    : 'Public Link Sharing',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold, fontSize: 15),
                               ),
                             ],
                           ),
@@ -176,7 +198,10 @@ class DetailScreen extends ConsumerWidget {
                             hasActiveLink
                                 ? 'Anyone with this link can view this note/link. Attachments are not shared.'
                                 : 'Generate an unguessable read-only link to share this item publicly.',
-                            style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurface.withOpacity(0.7)),
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: theme.colorScheme.onSurface
+                                    .withOpacity(0.7)),
                           ),
                           const SizedBox(height: 12),
                           if (hasActiveLink) ...[
@@ -185,14 +210,17 @@ class DetailScreen extends ConsumerWidget {
                               decoration: BoxDecoration(
                                 color: theme.colorScheme.surface,
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: theme.colorScheme.outlineVariant),
+                                border: Border.all(
+                                    color: theme.colorScheme.outlineVariant),
                               ),
                               child: Row(
                                 children: [
                                   Expanded(
                                     child: Text(
                                       publicUrl!,
-                                      style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
+                                      style: const TextStyle(
+                                          fontSize: 12,
+                                          fontFamily: 'monospace'),
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
@@ -200,9 +228,13 @@ class DetailScreen extends ConsumerWidget {
                                     icon: const Icon(Icons.copy, size: 18),
                                     tooltip: 'Copy Link',
                                     onPressed: () {
-                                      Clipboard.setData(ClipboardData(text: publicUrl));
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Public link copied!')),
+                                      Clipboard.setData(
+                                          ClipboardData(text: publicUrl));
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                            content:
+                                                Text('Public link copied!')),
                                       );
                                     },
                                   ),
@@ -210,7 +242,8 @@ class DetailScreen extends ConsumerWidget {
                                     icon: const Icon(Icons.share, size: 18),
                                     tooltip: 'Share',
                                     onPressed: () {
-                                      Share.share(publicUrl, subject: item.title);
+                                      Share.share(publicUrl,
+                                          subject: item.title);
                                     },
                                   ),
                                 ],
@@ -225,12 +258,16 @@ class DetailScreen extends ConsumerWidget {
                                 ref.invalidate(itemShareLinkProvider(itemId));
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Public link revoked successfully.')),
+                                    const SnackBar(
+                                        content: Text(
+                                            'Public link revoked successfully.')),
                                   );
                                 }
                               },
-                              icon: const Icon(Icons.link_off, color: Colors.red),
-                              label: const Text('Revoke Link', style: TextStyle(color: Colors.red)),
+                              icon:
+                                  const Icon(Icons.link_off, color: Colors.red),
+                              label: const Text('Revoke Link',
+                                  style: TextStyle(color: Colors.red)),
                             ),
                           ] else ...[
                             FilledButton.icon(
@@ -263,7 +300,7 @@ class DetailScreen extends ConsumerWidget {
                           item.attachmentMime == 'application/pdf'
                               ? Icons.picture_as_pdf
                               : Icons.image,
-                          color: const Color(0xFF6366F1),
+                          color: colors.accentLink,
                           size: 32,
                         ),
                         const SizedBox(width: 12),
@@ -273,12 +310,16 @@ class DetailScreen extends ConsumerWidget {
                             children: [
                               Text(
                                 item.attachmentName ?? 'Attachment',
-                                style: const TextStyle(fontWeight: FontWeight.w600),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w600),
                                 overflow: TextOverflow.ellipsis,
                               ),
                               Text(
                                 item.attachmentMime ?? '',
-                                style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withOpacity(0.6)),
+                                style: TextStyle(
+                                    fontSize: 12,
+                                    color: theme.colorScheme.onSurface
+                                        .withOpacity(0.6)),
                               ),
                             ],
                           ),
@@ -304,12 +345,12 @@ class DetailScreen extends ConsumerWidget {
 
               if (item.url != null && item.url!.isNotEmpty) ...[
                 Card(
-                  color: theme.colorScheme.primary.withOpacity(0.08),
+                  color: colors.accentLink.withValues(alpha: 0.08),
                   child: ListTile(
-                    leading: const Icon(Icons.link, color: Color(0xFF6366F1)),
+                    leading: Icon(Icons.link, color: colors.accentLink),
                     title: Text(
                       item.url!,
-                      style: const TextStyle(fontSize: 14, color: Color(0xFF6366F1)),
+                      style: TextStyle(fontSize: 14, color: colors.accentLink),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -322,7 +363,8 @@ class DetailScreen extends ConsumerWidget {
                           onPressed: () {
                             Clipboard.setData(ClipboardData(text: item.url!));
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('URL copied to clipboard')),
+                              const SnackBar(
+                                  content: Text('URL copied to clipboard')),
                             );
                           },
                         ),
@@ -358,11 +400,15 @@ class DetailScreen extends ConsumerWidget {
                 children: [
                   Text(
                     'Created: ${DateFormat.yMMMd().add_jm().format(item.createdAt.toLocal())}',
-                    style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withOpacity(0.6)),
+                    style: TextStyle(
+                        fontSize: 12,
+                        color: theme.colorScheme.onSurface.withOpacity(0.6)),
                   ),
                   Text(
                     'Updated: ${DateFormat.yMMMd().add_jm().format(item.updatedAt.toLocal())}',
-                    style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withOpacity(0.6)),
+                    style: TextStyle(
+                        fontSize: 12,
+                        color: theme.colorScheme.onSurface.withOpacity(0.6)),
                   ),
                 ],
               ),

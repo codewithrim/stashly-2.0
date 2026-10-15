@@ -9,10 +9,12 @@ class Items extends Table {
   TextColumn get id => text()();
   TextColumn get ownerId => text().withDefault(const Constant('local'))();
   TextColumn get type => text()();
-  TextColumn get title => text().withLength(max: 200).withDefault(const Constant(''))();
+  TextColumn get title =>
+      text().withLength(max: 200).withDefault(const Constant(''))();
   TextColumn get content => text().nullable().withLength(max: 20000)();
   TextColumn get url => text().nullable().withLength(max: 2048)();
-  TextColumn get tags => text().withDefault(const Constant('[]'))(); // stored as JSON array string
+  TextColumn get tags =>
+      text().withDefault(const Constant('[]'))(); // stored as JSON array string
   BoolColumn get archived => boolean().withDefault(const Constant(false))();
   DateTimeColumn get remindAt => dateTime().nullable()();
   TextColumn get attachmentPath => text().nullable()();
@@ -23,7 +25,8 @@ class Items extends Table {
 
   // Outbox / Local Sync tracking
   BoolColumn get isDirty => boolean().withDefault(const Constant(false))();
-  BoolColumn get isDeletedLocally => boolean().withDefault(const Constant(false))();
+  BoolColumn get isDeletedLocally =>
+      boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -58,7 +61,8 @@ class AppDatabase extends _$AppDatabase {
   // Helper conversions
   Future<List<SavedItem>> getAllActiveItems() async {
     final query = select(items)
-      ..where((tbl) => tbl.isDeletedLocally.equals(false) & tbl.archived.equals(false))
+      ..where((tbl) =>
+          tbl.isDeletedLocally.equals(false) & tbl.archived.equals(false))
       ..orderBy([(tbl) => OrderingTerm.desc(tbl.updatedAt)]);
     final rows = await query.get();
     return rows.map(rowToModel).toList();
@@ -66,20 +70,23 @@ class AppDatabase extends _$AppDatabase {
 
   Stream<List<SavedItem>> watchActiveItems() {
     final query = select(items)
-      ..where((tbl) => tbl.isDeletedLocally.equals(false) & tbl.archived.equals(false))
+      ..where((tbl) =>
+          tbl.isDeletedLocally.equals(false) & tbl.archived.equals(false))
       ..orderBy([(tbl) => OrderingTerm.desc(tbl.updatedAt)]);
     return query.watch().map((rows) => rows.map(rowToModel).toList());
   }
 
   Stream<List<SavedItem>> watchArchivedItems() {
     final query = select(items)
-      ..where((tbl) => tbl.isDeletedLocally.equals(false) & tbl.archived.equals(true))
+      ..where((tbl) =>
+          tbl.isDeletedLocally.equals(false) & tbl.archived.equals(true))
       ..orderBy([(tbl) => OrderingTerm.desc(tbl.updatedAt)]);
     return query.watch().map((rows) => rows.map(rowToModel).toList());
   }
 
   Future<SavedItem?> getItemById(String id) async {
-    final query = select(items)..where((tbl) => tbl.id.equals(id) & tbl.isDeletedLocally.equals(false));
+    final query = select(items)
+      ..where((tbl) => tbl.id.equals(id) & tbl.isDeletedLocally.equals(false));
     final row = await query.getSingleOrNull();
     return row == null ? null : rowToModel(row);
   }
@@ -123,6 +130,36 @@ class AppDatabase extends _$AppDatabase {
   Future<void> wipeAllData() async {
     await delete(items).go();
     await delete(drafts).go();
+  }
+
+  Future<Draft?> getDraft(String targetId) async {
+    final query = select(drafts)..where((tbl) => tbl.targetId.equals(targetId));
+    return query.getSingleOrNull();
+  }
+
+  Future<void> saveDraft({
+    required String targetId,
+    required String type,
+    String? title,
+    String? content,
+    String? url,
+    List<String> tags = const [],
+  }) async {
+    await into(drafts).insertOnConflictUpdate(
+      DraftsCompanion(
+        targetId: Value(targetId),
+        type: Value(type),
+        title: Value(title),
+        content: Value(content),
+        url: Value(url),
+        tags: Value(jsonEncode(tags)),
+        savedAt: Value(DateTime.now().toUtc()),
+      ),
+    );
+  }
+
+  Future<void> deleteDraft(String targetId) async {
+    await (delete(drafts)..where((tbl) => tbl.targetId.equals(targetId))).go();
   }
 
   SavedItem rowToModel(Item row) {

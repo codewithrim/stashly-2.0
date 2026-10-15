@@ -53,7 +53,8 @@ final itemDetailProvider = FutureProvider.family<SavedItem?, String>((ref, id) {
   return repo.getItemById(id);
 });
 
-final itemShareLinkProvider = FutureProvider.family<ShareLinkInfo?, String>((ref, id) {
+final itemShareLinkProvider =
+    FutureProvider.family<ShareLinkInfo?, String>((ref, id) {
   final service = ref.watch(shareLinkServiceProvider);
   return service.getActiveLinkForItem(id);
 });

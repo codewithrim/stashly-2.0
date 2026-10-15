@@ -152,9 +152,13 @@ class SavedItem {
       title: json['title'] as String? ?? '',
       content: json['content'] as String?,
       url: json['url'] as String?,
-      tags: (json['tags'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? const [],
+      tags:
+          (json['tags'] as List<dynamic>?)?.map((e) => e.toString()).toList() ??
+              const [],
       archived: json['archived'] as bool? ?? false,
-      remindAt: json['remind_at'] != null ? DateTime.tryParse(json['remind_at'] as String) : null,
+      remindAt: json['remind_at'] != null
+          ? DateTime.tryParse(json['remind_at'] as String)
+          : null,
       attachmentPath: json['attachment_path'] as String?,
       attachmentName: json['attachment_name'] as String?,
       attachmentMime: json['attachment_mime'] as String?,

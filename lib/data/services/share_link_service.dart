@@ -38,7 +38,9 @@ class ShareLinkService {
         token: data['token'] as String,
         itemId: data['item_id'] as String,
         createdAt: DateTime.parse(data['created_at'] as String),
-        revokedAt: data['revoked_at'] != null ? DateTime.parse(data['revoked_at'] as String) : null,
+        revokedAt: data['revoked_at'] != null
+            ? DateTime.parse(data['revoked_at'] as String)
+            : null,
       );
     } catch (_) {
       return null;

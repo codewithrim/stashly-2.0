@@ -1,5 +1,6 @@
 import 'dart:io';
-import 'package:supabase_flutter/supabase_flutter.dart' hide AuthException, StorageException;
+import 'package:supabase_flutter/supabase_flutter.dart'
+    hide AuthException, StorageException;
 import '../../core/errors.dart';
 
 class AttachmentMetadata {
@@ -63,7 +64,8 @@ class AttachmentService {
     }
 
     if (!allowedMimes.contains(mimeType.toLowerCase())) {
-      throw const ValidationException('Unsupported file format. Allowed: JPEG, PNG, WEBP, PDF.');
+      throw const ValidationException(
+          'Unsupported file format. Allowed: JPEG, PNG, WEBP, PDF.');
     }
 
     final sanitized = sanitizeFilename(rawFilename);
@@ -93,13 +95,15 @@ class AttachmentService {
   /// Generate a short-lived signed URL (60 minutes) for safe access
   Future<String> getSignedUrl(String storagePath) async {
     try {
-      final signedUrl = await _supabase.storage.from('attachments').createSignedUrl(
-            storagePath,
-            3600, // 60 minutes
-          );
+      final signedUrl =
+          await _supabase.storage.from('attachments').createSignedUrl(
+                storagePath,
+                3600, // 60 minutes
+              );
       return signedUrl;
     } catch (e) {
-      throw StorageException('Could not generate secure link for attachment: $e');
+      throw StorageException(
+          'Could not generate secure link for attachment: $e');
     }
   }
 

@@ -18,7 +18,8 @@ class ShareIntentState {
     bool clearError = false,
   }) {
     return ShareIntentState(
-      pendingPayload: clearPayload ? null : (pendingPayload ?? this.pendingPayload),
+      pendingPayload:
+          clearPayload ? null : (pendingPayload ?? this.pendingPayload),
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
@@ -49,6 +50,7 @@ class ShareIntentNotifier extends StateNotifier<ShareIntentState> {
   }
 }
 
-final shareIntentProvider = StateNotifierProvider<ShareIntentNotifier, ShareIntentState>((ref) {
+final shareIntentProvider =
+    StateNotifierProvider<ShareIntentNotifier, ShareIntentState>((ref) {
   return ShareIntentNotifier();
 });

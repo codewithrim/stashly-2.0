@@ -8,11 +8,15 @@ sealed class AppException implements Exception {
 }
 
 class NetworkException extends AppException {
-  const NetworkException([super.message = 'Unable to connect. Please check your internet connection and try again.']);
+  const NetworkException(
+      [super.message =
+          'Unable to connect. Please check your internet connection and try again.']);
 }
 
 class AuthException extends AppException {
-  const AuthException([super.message = 'Authentication failed. Please check your credentials.']);
+  const AuthException(
+      [super.message =
+          'Authentication failed. Please check your credentials.']);
 }
 
 class ValidationException extends AppException {
@@ -20,17 +24,21 @@ class ValidationException extends AppException {
 }
 
 class NotFoundException extends AppException {
-  const NotFoundException([super.message = 'The requested item was not found.']);
+  const NotFoundException(
+      [super.message = 'The requested item was not found.']);
 }
 
 class ConflictException extends AppException {
-  const ConflictException([super.message = 'This item was modified on another device.']);
+  const ConflictException(
+      [super.message = 'This item was modified on another device.']);
 }
 
 class StorageException extends AppException {
-  const StorageException([super.message = 'Failed to upload or retrieve attachment.']);
+  const StorageException(
+      [super.message = 'Failed to upload or retrieve attachment.']);
 }
 
 class UnknownException extends AppException {
-  const UnknownException([super.message = 'An unexpected error occurred. Please try again.']);
+  const UnknownException(
+      [super.message = 'An unexpected error occurred. Please try again.']);
 }

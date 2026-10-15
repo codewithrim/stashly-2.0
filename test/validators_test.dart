@@ -12,7 +12,8 @@ void main() {
         'github.com',
       );
       expect(
-        Validators.sanitizeTitle('', content: 'First line of snippet\nSecond line'),
+        Validators.sanitizeTitle('',
+            content: 'First line of snippet\nSecond line'),
         'First line of snippet',
       );
       expect(
@@ -22,8 +23,10 @@ void main() {
     });
 
     test('validateAndNormalizeUrl protocol and limits', () {
-      expect(Validators.validateAndNormalizeUrl('example.com'), 'https://example.com');
-      expect(Validators.validateAndNormalizeUrl('http://insecure.com'), 'http://insecure.com');
+      expect(Validators.validateAndNormalizeUrl('example.com'),
+          'https://example.com');
+      expect(Validators.validateAndNormalizeUrl('http://insecure.com'),
+          'http://insecure.com');
       expect(
         () => Validators.validateAndNormalizeUrl('javascript:alert(1)'),
         throwsA(isA<ValidationException>()),

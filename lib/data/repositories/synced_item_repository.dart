@@ -135,7 +135,8 @@ class SyncedItemRepository implements ItemRepository {
       if (typeFilter != null && item.type != typeFilter) return false;
 
       if (tagFilters != null && tagFilters.isNotEmpty) {
-        final hasAllTags = tagFilters.every((t) => item.tags.contains(t.toLowerCase()));
+        final hasAllTags =
+            tagFilters.every((t) => item.tags.contains(t.toLowerCase()));
         if (!hasAllTags) return false;
       }
 

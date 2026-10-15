@@ -9,7 +9,8 @@ final authStateChangesProvider = StreamProvider<AuthState>((ref) {
 
 final currentUserProvider = Provider<User?>((ref) {
   final authState = ref.watch(authStateChangesProvider);
-  return authState.value?.session?.user ?? Supabase.instance.client.auth.currentUser;
+  return authState.value?.session?.user ??
+      Supabase.instance.client.auth.currentUser;
 });
 
 class AuthController extends StateNotifier<AsyncValue<void>> {
@@ -30,7 +31,9 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
     } on AuthApiException catch (e) {
       state = AsyncError(e.message, StackTrace.current);
     } catch (e) {
-      state = AsyncError('Sign-in failed. Please check your connection and try again.', StackTrace.current);
+      state = AsyncError(
+          'Sign-in failed. Please check your connection and try again.',
+          StackTrace.current);
     }
   }
 
@@ -62,6 +65,7 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
   }
 }
 
-final authControllerProvider = StateNotifierProvider<AuthController, AsyncValue<void>>((ref) {
+final authControllerProvider =
+    StateNotifierProvider<AuthController, AsyncValue<void>>((ref) {
   return AuthController(ref);
 });

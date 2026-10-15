@@ -3,7 +3,8 @@ import 'errors.dart';
 /// Validation rules defined in section 3 of stashly.md
 class Validators {
   /// Title: trimmed; if empty, auto-fill from URL host, first line of content, or "Untitled". Max 200 chars.
-  static String sanitizeTitle(String? rawTitle, {String? url, String? content}) {
+  static String sanitizeTitle(String? rawTitle,
+      {String? url, String? content}) {
     final trimmed = rawTitle?.trim() ?? '';
     if (trimmed.isNotEmpty) {
       return trimmed.length > 200 ? trimmed.substring(0, 200) : trimmed;
@@ -46,7 +47,8 @@ class Validators {
     }
 
     if (uri.scheme != 'http' && uri.scheme != 'https') {
-      throw const ValidationException('Only http and https protocols are supported.');
+      throw const ValidationException(
+          'Only http and https protocols are supported.');
     }
 
     return trimmed;

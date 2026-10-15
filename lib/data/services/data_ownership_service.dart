@@ -68,7 +68,8 @@ class DataOwnershipService {
     try {
       final response = await _supabase.functions.invoke('delete-account');
       if (response.status != 200) {
-        throw UnknownException('Edge Function failed to delete account (Status: ${response.status})');
+        throw UnknownException(
+            'Edge Function failed to delete account (Status: ${response.status})');
       }
 
       // Wipe local storage and sign out

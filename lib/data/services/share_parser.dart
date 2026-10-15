@@ -49,7 +49,11 @@ class SharedPayload {
       String? content;
 
       if (beforeUrl.isNotEmpty) {
-        final lines = beforeUrl.split('\n').map((l) => l.trim()).where((l) => l.isNotEmpty).toList();
+        final lines = beforeUrl
+            .split('\n')
+            .map((l) => l.trim())
+            .where((l) => l.isNotEmpty)
+            .toList();
         if (lines.isNotEmpty) {
           title = lines.first;
           if (lines.length > 1) {
@@ -59,7 +63,9 @@ class SharedPayload {
       }
 
       if (afterUrl.isNotEmpty) {
-        content = (content == null || content.isEmpty) ? afterUrl : '$content\n$afterUrl';
+        content = (content == null || content.isEmpty)
+            ? afterUrl
+            : '$content\n$afterUrl';
       }
 
       if (title.isEmpty) {
@@ -76,7 +82,11 @@ class SharedPayload {
       );
     } else {
       // Note item
-      final lines = text.split('\n').map((l) => l.trim()).where((l) => l.isNotEmpty).toList();
+      final lines = text
+          .split('\n')
+          .map((l) => l.trim())
+          .where((l) => l.isNotEmpty)
+          .toList();
       final title = lines.isNotEmpty ? lines.first : 'Shared Note';
       final content = lines.length > 1 ? lines.sublist(1).join('\n') : text;
 

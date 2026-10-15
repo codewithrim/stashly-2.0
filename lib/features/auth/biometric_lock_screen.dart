@@ -7,7 +7,8 @@ class BiometricLockScreen extends ConsumerStatefulWidget {
   const BiometricLockScreen({super.key});
 
   @override
-  ConsumerState<BiometricLockScreen> createState() => _BiometricLockScreenState();
+  ConsumerState<BiometricLockScreen> createState() =>
+      _BiometricLockScreenState();
 }
 
 class _BiometricLockScreenState extends ConsumerState<BiometricLockScreen> {
@@ -23,7 +24,8 @@ class _BiometricLockScreenState extends ConsumerState<BiometricLockScreen> {
 
   Future<void> _triggerBiometric() async {
     setState(() => _isAuthenticating = true);
-    final success = await ref.read(biometricLockProvider.notifier).promptUnlock();
+    final success =
+        await ref.read(biometricLockProvider.notifier).promptUnlock();
     setState(() => _isAuthenticating = false);
 
     if (success && mounted) {
@@ -33,6 +35,7 @@ class _BiometricLockScreenState extends ConsumerState<BiometricLockScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       body: Center(
         child: Padding(
@@ -43,13 +46,13 @@ class _BiometricLockScreenState extends ConsumerState<BiometricLockScreen> {
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF6366F1).withOpacity(0.1),
+                  color: theme.colorScheme.primary.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.fingerprint,
                   size: 72,
-                  color: Color(0xFF6366F1),
+                  color: theme.colorScheme.primary,
                 ),
               ),
               const SizedBox(height: 24),
@@ -69,8 +72,10 @@ class _BiometricLockScreenState extends ConsumerState<BiometricLockScreen> {
                 icon: const Icon(Icons.lock_open),
                 label: Text(_isAuthenticating ? 'Scanning...' : 'Unlock Vault'),
                 style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF6366F1),
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  backgroundColor: theme.colorScheme.primary,
+                  foregroundColor: theme.colorScheme.onPrimary,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 ),
               ),
             ],

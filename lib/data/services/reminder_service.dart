@@ -10,10 +10,12 @@ class ReminderService {
 
   ReminderService._internal();
 
-  Future<void> initialize({void Function(String? itemId)? onSelectNotification}) async {
+  Future<void> initialize(
+      {void Function(String? itemId)? onSelectNotification}) async {
     tz.initializeTimeZones();
 
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
     const initSettings = InitializationSettings(android: androidSettings);
 
     await _notificationsPlugin.initialize(
@@ -28,8 +30,9 @@ class ReminderService {
 
   /// Request POST_NOTIFICATIONS permission on Android 13+ with graceful denial handling
   Future<bool> requestPermission() async {
-    final androidImpl = _notificationsPlugin
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    final androidImpl =
+        _notificationsPlugin.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
 
     if (androidImpl != null) {
       final granted = await androidImpl.requestNotificationsPermission();
@@ -49,7 +52,8 @@ class ReminderService {
     const androidDetails = AndroidNotificationDetails(
       'stashly_reminders',
       'Stashly Reminders',
-      channelDescription: 'Notifications for items scheduled to resurface later',
+      channelDescription:
+          'Notifications for items scheduled to resurface later',
       importance: Importance.high,
       priority: Priority.high,
     );

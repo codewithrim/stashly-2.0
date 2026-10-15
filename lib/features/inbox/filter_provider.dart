@@ -61,7 +61,8 @@ class FilterNotifier extends StateNotifier<FilterState> {
   void reset() => state = const FilterState();
 }
 
-final filterProvider = StateNotifierProvider<FilterNotifier, FilterState>((ref) {
+final filterProvider =
+    StateNotifierProvider<FilterNotifier, FilterState>((ref) {
   return FilterNotifier();
 });
 
@@ -77,7 +78,8 @@ final filteredItemsProvider = Provider<AsyncValue<List<SavedItem>>>((ref) {
         return false;
       }
       if (filter.selectedTags.isNotEmpty) {
-        final hasAll = filter.selectedTags.every((t) => item.tags.contains(t.toLowerCase()));
+        final hasAll = filter.selectedTags
+            .every((t) => item.tags.contains(t.toLowerCase()));
         if (!hasAll) return false;
       }
       if (filter.query.trim().isNotEmpty) {
