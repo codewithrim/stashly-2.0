@@ -538,6 +538,79 @@ class AppTheme {
           borderRadius: BorderRadius.all(Radius.circular(14)),
         ),
       ),
+      datePickerTheme: DatePickerThemeData(
+        backgroundColor: c.surfaceCard,
+        surfaceTintColor: Colors.transparent,
+        headerBackgroundColor: c.surfaceSubtle,
+        headerForegroundColor: c.textPrimary,
+        headerHeadlineStyle: TextStyle(
+          color: c.textPrimary,
+          fontSize: 24,
+          fontWeight: FontWeight.w700,
+        ),
+        headerHelpStyle: TextStyle(
+          color: c.textSecondary,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
+        dayForegroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const Color(0xFF172B4D);
+          }
+          if (states.contains(WidgetState.disabled)) {
+            return c.textTertiary;
+          }
+          return c.textPrimary;
+        }),
+        dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return c.accentHoney;
+          }
+          return null;
+        }),
+        todayForegroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const Color(0xFF172B4D);
+          }
+          return const Color(0xFFB45309);
+        }),
+        todayBorder: const BorderSide(color: Color(0xFFB45309), width: 1.5),
+        cancelButtonStyle: TextButton.styleFrom(
+          foregroundColor: const Color(0xFF64748B),
+          textStyle: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.1,
+          ),
+        ),
+        confirmButtonStyle: TextButton.styleFrom(
+          foregroundColor: const Color(0xFFB45309),
+          textStyle: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.1,
+          ),
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: c.surfaceBorder, width: 1.0),
+        ),
+      ),
+      timePickerTheme: TimePickerThemeData(
+        backgroundColor: c.surfaceCard,
+        cancelButtonStyle: TextButton.styleFrom(
+          foregroundColor: const Color(0xFF64748B),
+          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        ),
+        confirmButtonStyle: TextButton.styleFrom(
+          foregroundColor: const Color(0xFFB45309),
+          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: c.surfaceBorder, width: 1.0),
+        ),
+      ),
       dividerTheme: DividerThemeData(
         color: c.surfaceBorder,
         thickness: 1,
@@ -729,6 +802,79 @@ class AppTheme {
         hoverElevation: 3,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(14)),
+        ),
+      ),
+      datePickerTheme: DatePickerThemeData(
+        backgroundColor: c.surfaceCard,
+        surfaceTintColor: Colors.transparent,
+        headerBackgroundColor: c.surfaceSubtle,
+        headerForegroundColor: c.textPrimary,
+        headerHeadlineStyle: TextStyle(
+          color: c.textPrimary,
+          fontSize: 24,
+          fontWeight: FontWeight.w700,
+        ),
+        headerHelpStyle: TextStyle(
+          color: c.textSecondary,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
+        dayForegroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const Color(0xFF172B4D);
+          }
+          if (states.contains(WidgetState.disabled)) {
+            return c.textTertiary;
+          }
+          return c.textPrimary;
+        }),
+        dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return c.accentHoney;
+          }
+          return null;
+        }),
+        todayForegroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const Color(0xFF172B4D);
+          }
+          return c.accentHoney;
+        }),
+        todayBorder: BorderSide(color: c.accentHoney, width: 1.5),
+        cancelButtonStyle: TextButton.styleFrom(
+          foregroundColor: const Color(0xFF94A3B8),
+          textStyle: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.1,
+          ),
+        ),
+        confirmButtonStyle: TextButton.styleFrom(
+          foregroundColor: c.accentHoney,
+          textStyle: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.1,
+          ),
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: c.surfaceBorder, width: 1.0),
+        ),
+      ),
+      timePickerTheme: TimePickerThemeData(
+        backgroundColor: c.surfaceCard,
+        cancelButtonStyle: TextButton.styleFrom(
+          foregroundColor: const Color(0xFF94A3B8),
+          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        ),
+        confirmButtonStyle: TextButton.styleFrom(
+          foregroundColor: c.accentHoney,
+          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: c.surfaceBorder, width: 1.0),
         ),
       ),
       dividerTheme: DividerThemeData(

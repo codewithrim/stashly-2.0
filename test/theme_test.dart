@@ -182,5 +182,39 @@ void main() {
       expect(imageBadge.background, c.badgeImageBg);
       expect(imageBadge.foreground, c.badgeImageFg);
     });
+
+    test('DatePicker Cancel & OK button contrast satisfies WCAG AA across themes', () {
+      final darkTheme = AppTheme.darkTheme;
+      final darkPicker = darkTheme.datePickerTheme;
+      final darkBg = darkPicker.backgroundColor ?? darkTheme.colorScheme.surface;
+
+      final darkCancelColor = (darkPicker.cancelButtonStyle?.foregroundColor?.resolve({}))!;
+      final darkConfirmColor = (darkPicker.confirmButtonStyle?.foregroundColor?.resolve({}))!;
+
+      // Dark theme Cancel (muted blue-grey) and OK (honey yellow) on dark surface
+      final darkCancelRatio = _contrastRatio(darkCancelColor, darkBg);
+      final darkConfirmRatio = _contrastRatio(darkConfirmColor, darkBg);
+
+      expect(darkCancelRatio, greaterThanOrEqualTo(4.5),
+          reason: 'Dark theme Cancel button must be readable against dark dialog background');
+      expect(darkConfirmRatio, greaterThanOrEqualTo(7.0),
+          reason: 'Dark theme OK button must be prominent honey accent against dark dialog background');
+
+      final lightTheme = AppTheme.lightTheme;
+      final lightPicker = lightTheme.datePickerTheme;
+      final lightBg = lightPicker.backgroundColor ?? lightTheme.colorScheme.surface;
+
+      final lightCancelColor = (lightPicker.cancelButtonStyle?.foregroundColor?.resolve({}))!;
+      final lightConfirmColor = (lightPicker.confirmButtonStyle?.foregroundColor?.resolve({}))!;
+
+      // Light theme Cancel (slate blue-grey) and OK (warm honey amber) on white surface
+      final lightCancelRatio = _contrastRatio(lightCancelColor, lightBg);
+      final lightConfirmRatio = _contrastRatio(lightConfirmColor, lightBg);
+
+      expect(lightCancelRatio, greaterThanOrEqualTo(4.5),
+          reason: 'Light theme Cancel button must be readable against light dialog background');
+      expect(lightConfirmRatio, greaterThanOrEqualTo(4.5),
+          reason: 'Light theme OK button must be readable against light dialog background');
+    });
   });
 }

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -340,16 +341,76 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                           TextStyle(fontSize: 14, color: colors.textPrimary)),
                   onTap: () async {
                     Navigator.of(ctx).pop();
+                    final isDark =
+                        Theme.of(context).brightness == Brightness.dark;
+                    final currentColors = context.stashlyColors;
                     final pickedDate = await showDatePicker(
                       context: context,
                       initialDate: now.add(const Duration(days: 1)),
                       firstDate: now,
                       lastDate: now.add(const Duration(days: 365)),
+                      builder: (pickerContext, child) {
+                        return Theme(
+                          data: Theme.of(pickerContext).copyWith(
+                            datePickerTheme: DatePickerThemeData(
+                              backgroundColor: currentColors.surfaceCard,
+                              surfaceTintColor: Colors.transparent,
+                              cancelButtonStyle: TextButton.styleFrom(
+                                foregroundColor: isDark
+                                    ? const Color(0xFF94A3B8)
+                                    : const Color(0xFF64748B),
+                                textStyle: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              confirmButtonStyle: TextButton.styleFrom(
+                                foregroundColor: isDark
+                                    ? currentColors.accentHoney
+                                    : const Color(0xFFB45309),
+                                textStyle: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ),
+                          child: child!,
+                        );
+                      },
                     );
                     if (pickedDate != null && mounted) {
                       final pickedTime = await showTimePicker(
                         context: context,
                         initialTime: const TimeOfDay(hour: 9, minute: 0),
+                        builder: (pickerContext, child) {
+                          return Theme(
+                            data: Theme.of(pickerContext).copyWith(
+                              timePickerTheme: TimePickerThemeData(
+                                backgroundColor: currentColors.surfaceCard,
+                                cancelButtonStyle: TextButton.styleFrom(
+                                  foregroundColor: isDark
+                                      ? const Color(0xFF94A3B8)
+                                      : const Color(0xFF64748B),
+                                  textStyle: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                confirmButtonStyle: TextButton.styleFrom(
+                                  foregroundColor: isDark
+                                      ? currentColors.accentHoney
+                                      : const Color(0xFFB45309),
+                                  textStyle: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            child: child!,
+                          );
+                        },
                       );
                       if (pickedTime != null && mounted) {
                         setState(() {
@@ -497,13 +558,17 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       await repo.saveItem(item);
 
       // Clean saved draft on success
-      final db = ref.read(databaseProvider);
-      await db.deleteDraft(widget.itemId);
+      try {
+        final db = ref.read(databaseProvider);
+        await db.deleteDraft(widget.itemId);
+      } catch (e) {
+        debugPrint('Non-fatal: could not delete draft: $e');
+      }
 
       // Schedule or cancel local notification (errors shouldn't prevent saving)
-      try {
-        final reminderService = ref.read(reminderServiceProvider);
-        if (_remindAt != null) {
+      if (_remindAt != null) {
+        try {
+          final reminderService = ref.read(reminderServiceProvider);
           final granted = await reminderService.requestPermission();
           if (!granted && mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -517,27 +582,48 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
             title: item.title,
             scheduledDate: _remindAt!,
           );
-        } else {
-          await reminderService.cancelReminder(item.id);
+        } catch (e) {
+          debugPrint('Warning: Reminder update failed: $e');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Note saved, but reminder notification could not be updated.'),
+              ),
+            );
+          }
         }
-      } catch (e) {
-        // Log or show friendly warning without blocking the saved item
-        debugPrint('Warning: Reminder update failed: $e');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Note saved, but reminder notification could not be updated.'),
-            ),
-          );
+      } else if (!isNew) {
+        // Only cancel on existing items that might have previously had a reminder
+        try {
+          final reminderService = ref.read(reminderServiceProvider);
+          await reminderService.cancelReminder(item.id);
+        } catch (e) {
+          debugPrint('Warning: Reminder cancel failed: $e');
         }
       }
 
+      // Mark form as clean so PopScope does not block navigation
+      _isDirty = false;
+
       if (mounted) {
-        Navigator.of(context).maybePop();
+        context.pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(isNew ? 'Note saved' : 'Note updated'),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     } catch (e) {
+      debugPrint('Error saving item: $e');
       setState(() {
-        _errorMessage = 'Failed to save item: $e';
+        final message = e is AppException
+            ? e.message
+            : (e is PlatformException && e.message != null
+                ? e.message!
+                : 'Failed to save item. Please try again.');
+        _errorMessage = message;
         _isSaving = false;
       });
     }
@@ -630,7 +716,10 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
               child: FilledButton.icon(
                 style: FilledButton.styleFrom(
                   backgroundColor: colors.accentPrimary,
-                  foregroundColor: colors.surfaceBackground,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor:
+                      colors.accentPrimary.withValues(alpha: 0.45),
+                  disabledForegroundColor: Colors.white.withValues(alpha: 0.5),
                   padding:
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   minimumSize: const Size(0, 36),
@@ -640,18 +729,20 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                 ),
                 onPressed: _isSaving ? null : _handleSave,
                 icon: _isSaving
-                    ? SizedBox(
+                    ? const SizedBox(
                         width: 14,
                         height: 14,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: colors.surfaceBackground,
+                          color: Colors.white,
                         ),
                       )
-                    : const Icon(Icons.check_rounded, size: 16),
+                    : const Icon(Icons.check_rounded,
+                        size: 16, color: Colors.white),
                 label: Text(
                   _isSaving ? 'Saving...' : (isNew ? 'Save' : 'Update'),
                   style: const TextStyle(
+                    color: Colors.white,
                     fontSize: 13.5,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.1,
@@ -1079,10 +1170,18 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                         ),
                         onPressed: _pickImage,
                         icon: Icon(Icons.photo_outlined,
-                            size: 15, color: colors.accentPrimary),
+                            size: 15,
+                            color: Theme.of(context).brightness ==
+                                    Brightness.dark
+                                ? colors.accentHoney
+                                : colors.accentPrimary),
                         label: Text('Photo',
                             style: TextStyle(
-                                fontSize: 12.5, color: colors.accentPrimary)),
+                                fontSize: 12.5,
+                                color: Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? colors.accentHoney
+                                    : colors.accentPrimary)),
                       ),
                       const SizedBox(width: 4),
                       TextButton.icon(

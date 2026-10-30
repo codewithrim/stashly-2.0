@@ -242,5 +242,118 @@ void main() {
       expect(find.text('Save'), findsOneWidget);
       expect(find.text('Note'), findsOneWidget);
     });
+
+    testWidgets('Save button text and checkmark icon are white across themes',
+        (tester) async {
+      final repo = FakeEditorItemRepository();
+
+      // Test dark theme
+      await tester.pumpWidget(buildEditor(
+        repo: repo,
+        itemId: 'new',
+        themeMode: ThemeMode.dark,
+      ));
+      await tester.pumpAndSettle();
+
+      final saveText = tester.widget<Text>(find.text('Save'));
+      expect(saveText.style?.color, Colors.white);
+
+      final checkIcon = tester.widget<Icon>(find.byIcon(Icons.check_rounded));
+      expect(checkIcon.color, Colors.white);
+
+      // Test light theme
+      await tester.pumpWidget(buildEditor(
+        repo: repo,
+        itemId: 'new',
+        themeMode: ThemeMode.light,
+      ));
+      await tester.pumpAndSettle();
+
+      final lightSaveText = tester.widget<Text>(find.text('Save'));
+      expect(lightSaveText.style?.color, Colors.white);
+
+      final lightCheckIcon =
+          tester.widget<Icon>(find.byIcon(Icons.check_rounded));
+      expect(lightCheckIcon.color, Colors.white);
+    });
+
+    testWidgets(
+        'Saving a new note completes cleanly without yellow error popup',
+        (tester) async {
+      final repo = FakeEditorItemRepository();
+
+      await tester.pumpWidget(buildEditor(
+        repo: repo,
+        itemId: 'new',
+        themeMode: ThemeMode.dark,
+      ));
+      await tester.pumpAndSettle();
+
+      // Enter note content
+      final contentField = find.byWidgetPredicate((w) =>
+          w is TextField &&
+          w.decoration?.hintText?.contains('Start writing') == true);
+      await tester.enterText(contentField, 'Fresh stashed note content');
+      await tester.pumpAndSettle();
+
+      // Tap Save
+      await tester.tap(find.text('Save'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 600));
+
+      // Verify item saved to repository
+      expect(repo.lastSavedItem, isNotNull);
+      expect(repo.lastSavedItem!.content, 'Fresh stashed note content');
+      expect(repo.lastSavedItem!.title, 'Fresh stashed note content');
+
+      // Verify NO yellow diagnostic or error banner appeared
+      expect(find.byIcon(Icons.info_outline_rounded), findsNothing);
+      expect(find.textContaining('Failed to save'), findsNothing);
+    });
+
+    testWidgets(
+        'Custom DatePicker dialog displays Cancel in muted blue-grey and OK in honey yellow',
+        (tester) async {
+      final repo = FakeEditorItemRepository();
+
+      await tester.pumpWidget(buildEditor(
+        repo: repo,
+        itemId: 'new',
+        themeMode: ThemeMode.dark,
+      ));
+      await tester.pumpAndSettle();
+
+      // Scroll and open reminder sheet
+      final reminderTile = find.text('Resurface Later');
+      await tester.ensureVisible(reminderTile);
+      await tester.tap(reminderTile);
+      await tester.pumpAndSettle();
+
+      // Tap Pick custom date & time
+      await tester.tap(find.text('Pick custom date & time'));
+      await tester.pumpAndSettle();
+
+      // DatePicker should be open
+      expect(find.byType(DatePickerDialog), findsOneWidget);
+      expect(find.text('Cancel'), findsOneWidget);
+      expect(find.text('OK'), findsOneWidget);
+
+      final cancelButton = tester.widget<TextButton>(
+          find.widgetWithText(TextButton, 'Cancel'));
+      final okButton = tester.widget<TextButton>(
+          find.widgetWithText(TextButton, 'OK'));
+
+      final cancelColor =
+          cancelButton.style?.foregroundColor?.resolve({}) ??
+              cancelButton.style?.textStyle?.resolve({})?.color;
+      final okColor =
+          okButton.style?.foregroundColor?.resolve({}) ??
+              okButton.style?.textStyle?.resolve({})?.color;
+
+      expect(cancelColor, const Color(0xFF94A3B8),
+          reason: 'Cancel button should be muted light blue-grey');
+      expect(okColor, const Color(0xFFF2C66D),
+          reason: 'OK button should be prominent honey yellow');
+    });
   });
 }
