@@ -17,7 +17,8 @@ final databaseProvider = Provider<AppDatabase>((ref) {
 
 final itemRepositoryProvider = Provider<ItemRepository>((ref) {
   final db = ref.watch(databaseProvider);
-  return SyncedItemRepository(db, Supabase.instance.client);
+  final reminderService = ref.watch(reminderServiceProvider);
+  return SyncedItemRepository(db, Supabase.instance.client, reminderService);
 });
 
 final attachmentServiceProvider = Provider<AttachmentService>((ref) {

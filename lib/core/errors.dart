@@ -38,7 +38,13 @@ class StorageException extends AppException {
       [super.message = 'Failed to upload or retrieve attachment.']);
 }
 
+class ReminderException extends AppException {
+  const ReminderException(
+      [super.message = 'Failed to set or update reminder notification.']);
+}
+
 class UnknownException extends AppException {
   const UnknownException(
       [super.message = 'An unexpected error occurred. Please try again.']);
 }
+

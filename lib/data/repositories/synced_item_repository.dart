@@ -2,13 +2,16 @@ import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../local/db.dart';
 import '../models/item.dart';
+import '../services/reminder_service.dart';
 import 'item_repository.dart';
 
 class SyncedItemRepository implements ItemRepository {
   final AppDatabase _db;
   final SupabaseClient _supabase;
+  final ReminderService _reminderService;
 
-  SyncedItemRepository(this._db, this._supabase);
+  SyncedItemRepository(this._db, this._supabase, [ReminderService? reminderService])
+      : _reminderService = reminderService ?? ReminderService.instance;
 
   String? get _currentUserId => _supabase.auth.currentUser?.id;
 
@@ -76,6 +79,13 @@ class SyncedItemRepository implements ItemRepository {
 
   @override
   Future<void> deleteItem(String id) async {
+    // Attempt to cancel any scheduled notification for this item
+    try {
+      await _reminderService.cancelReminder(id);
+    } catch (_) {
+      // Do not block local deletion if notification cancel fails
+    }
+
     await _db.markDeletedLocally(id);
 
     if (_currentUserId != null) {

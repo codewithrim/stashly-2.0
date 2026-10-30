@@ -500,17 +500,36 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       final db = ref.read(databaseProvider);
       await db.deleteDraft(widget.itemId);
 
-      // Schedule or cancel local notification
-      final reminderService = ref.read(reminderServiceProvider);
-      if (_remindAt != null) {
-        await reminderService.requestPermission();
-        await reminderService.scheduleReminder(
-          itemId: item.id,
-          title: item.title,
-          scheduledDate: _remindAt!,
-        );
-      } else {
-        await reminderService.cancelReminder(item.id);
+      // Schedule or cancel local notification (errors shouldn't prevent saving)
+      try {
+        final reminderService = ref.read(reminderServiceProvider);
+        if (_remindAt != null) {
+          final granted = await reminderService.requestPermission();
+          if (!granted && mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Notifications are disabled. The reminder might not alert you.'),
+              ),
+            );
+          }
+          await reminderService.scheduleReminder(
+            itemId: item.id,
+            title: item.title,
+            scheduledDate: _remindAt!,
+          );
+        } else {
+          await reminderService.cancelReminder(item.id);
+        }
+      } catch (e) {
+        // Log or show friendly warning without blocking the saved item
+        debugPrint('Warning: Reminder update failed: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Note saved, but reminder notification could not be updated.'),
+            ),
+          );
+        }
       }
 
       if (mounted) {

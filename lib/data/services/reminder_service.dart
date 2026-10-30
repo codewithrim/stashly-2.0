@@ -1,6 +1,7 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+import '../../core/errors.dart';
 
 class ReminderService {
   final FlutterLocalNotificationsPlugin _notificationsPlugin =
@@ -65,22 +66,42 @@ class ReminderService {
     // If time is already in the past, do not schedule
     if (scheduledTz.isBefore(tz.TZDateTime.now(tz.local))) return;
 
-    await _notificationsPlugin.zonedSchedule(
-      notificationId,
-      'Reminder: $title',
-      "Tap to view this item you stashed for later.",
-      scheduledTz,
-      details,
-      androidScheduleMode: AndroidScheduleMode.inexact,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      payload: itemId,
-    );
+    try {
+      await _notificationsPlugin.zonedSchedule(
+        notificationId,
+        'Reminder: $title',
+        "Tap to view this item you stashed for later.",
+        scheduledTz,
+        details,
+        androidScheduleMode: AndroidScheduleMode.inexact,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        payload: itemId,
+      );
+    } catch (e) {
+      // Re-throw formatted exception so caller can decide how to handle it
+      throw ReminderException('Could not schedule reminder: $e');
+    }
   }
 
   /// Cancel reminder when item or reminder is cleared
   Future<void> cancelReminder(String itemId) async {
-    final notificationId = itemId.hashCode.abs() % 2147483647;
-    await _notificationsPlugin.cancel(notificationId);
+    try {
+      final notificationId = itemId.hashCode.abs() % 2147483647;
+      await _notificationsPlugin.cancel(notificationId);
+    } catch (e) {
+      // Catch cancellation errors to ensure caller operations (like saving or deleting) are not blocked
+      // but rethrow custom ReminderException if caller explicitly wants to handle it
+      throw ReminderException('Could not cancel reminder: $e');
+    }
+  }
+
+  /// Check pending notification requests
+  Future<List<PendingNotificationRequest>> getPendingReminders() async {
+    try {
+      return await _notificationsPlugin.pendingNotificationRequests();
+    } catch (e) {
+      return [];
+    }
   }
 }
